@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { Link, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Brand } from '@/components/common/Brand';
+import { CartIconButton } from '@/components/common/CartIconButton';
 import { Screen } from '@/components/common/Screen';
-import { useMemo } from 'react';
 import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 import { CategorySection } from '@/components/home/CategorySection';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
@@ -21,6 +22,7 @@ export default function HomeScreen() {
   const deliveryAddress = useShopStore((state) =>
     state.addresses.find((item) => item.id === state.selectedAddressId),
   );
+
   return (
     <Screen>
       <View style={styles.header}>
@@ -35,9 +37,7 @@ export default function HomeScreen() {
             <Feather name="bell" size={21} color={theme.colors.text} />
             {unreadNotifications > 0 && <View style={styles.notificationDot} />}
           </Pressable>
-          <Link href="/(tabs)/cart" accessibilityLabel="Mở giỏ hàng" style={styles.headerButton}>
-            <Feather name="shopping-bag" size={22} color={theme.colors.text} />
-          </Link>
+          <CartIconButton />
         </View>
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
@@ -108,7 +108,10 @@ const createStyles = (theme: AppTheme) =>
     },
     headerActions: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
     headerButton: {
-      padding: theme.spacing.md,
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
+      alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: theme.radius.pill,
       backgroundColor: theme.colors.background,
     },

@@ -12,7 +12,7 @@ export function Brand({ large = false }: { large?: boolean }) {
   return (
     <View style={styles.row} accessibilityLabel="MiniShop">
       <View style={[styles.mark, large && styles.largeMark]}>
-        <Feather name="shopping-bag" size={large ? 32 : 20} color={theme.colors.onPrimary} />
+        <Feather name="shopping-cart" size={large ? 32 : 20} color={theme.colors.onPrimary} />
       </View>
       <Text style={[styles.word, large && theme.typography.display]}>
         mini<Text style={styles.accent}>shop</Text>

@@ -50,7 +50,7 @@ export default function TabLayout() {
           title: 'Giỏ hàng',
           tabBarAccessibilityLabel: `Giỏ hàng, ${count} sản phẩm`,
           tabBarIcon: ({ focused }) => (
-            <TabIcon name="shopping-bag" focused={focused} count={count} />
+            <TabIcon name="shopping-cart" focused={focused} count={count} />
           ),
         }}
       />

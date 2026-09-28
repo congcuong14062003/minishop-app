@@ -4,6 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PageHeader } from '@/components/common/PageHeader';
+import { CartIconButton } from '@/components/common/CartIconButton';
 import { Screen } from '@/components/common/Screen';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductGallery } from '@/components/product/ProductGallery';
@@ -78,14 +79,7 @@ export default function ProductDetailScreen() {
 
   return (
     <Screen>
-      <PageHeader
-        title="Chi tiết sản phẩm"
-        right={
-          <Pressable onPress={() => router.push('/(tabs)/cart')} accessibilityLabel="Mở giỏ hàng">
-            <Feather name="shopping-bag" size={21} color={theme.colors.text} />
-          </Pressable>
-        }
-      />
+      <PageHeader title="Chi tiết sản phẩm" right={<CartIconButton />} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <ProductGallery
           images={product.images}
@@ -208,13 +202,7 @@ export default function ProductDetailScreen() {
         >
           <Feather name="message-circle" size={22} color={theme.colors.text} />
         </Pressable>
-        <Pressable
-          style={styles.iconAction}
-          onPress={() => router.push('/(tabs)/cart')}
-          accessibilityLabel="Mở giỏ hàng"
-        >
-          <Feather name="shopping-cart" size={22} color={theme.colors.text} />
-        </Pressable>
+        <CartIconButton placement="bottom" />
         <Pressable style={styles.addButton} onPress={addCurrentItem}>
           <Text style={styles.addText}>Thêm vào giỏ</Text>
         </Pressable>
@@ -347,7 +335,14 @@ const createStyles = (theme: AppTheme) =>
       backgroundColor: theme.colors.surface,
       ...theme.shadows.subtle,
     },
-    iconAction: { width: 34, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+    iconAction: {
+      width: theme.layout.touchTarget,
+      height: theme.layout.touchTarget,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
     addButton: {
       flex: 1,
       minHeight: theme.layout.touchTarget,

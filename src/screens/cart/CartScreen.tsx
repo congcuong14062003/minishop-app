@@ -35,7 +35,7 @@ export default function CartScreen() {
       <PageHeader title={`Giỏ hàng (${cart.length})`} back={false} />
       {cart.length === 0 ? (
         <View style={styles.empty}>
-          <Feather name="shopping-bag" size={64} color={theme.colors.muted} />
+          <Feather name="shopping-cart" size={64} color={theme.colors.muted} />
           <Text style={styles.emptyTitle}>Giỏ hàng đang trống</Text>
           <Text style={styles.muted}>Khám phá sản phẩm và thêm vào giỏ hàng của bạn.</Text>
           <Pressable style={styles.shopButton} onPress={() => router.push('/(tabs)')}>
@@ -54,7 +54,7 @@ export default function CartScreen() {
               <Text style={styles.label}>Chọn tất cả ({cart.length})</Text>
             </Pressable>
             <View style={styles.shopHeading}>
-              <Feather name="shopping-bag" size={18} color={theme.colors.primary} />
+              <Feather name="shopping-cart" size={18} color={theme.colors.primary} />
               <Text style={styles.label}>MiniShop Official</Text>
             </View>
             {cart.map((item) => {
