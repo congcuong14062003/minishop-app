@@ -2,11 +2,13 @@ import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TabIcon } from '@/navigation/TabIcon';
 import { useCartCount } from '@/hooks/useCartCount';
-import { theme } from '@/theme';
-
+import { useAppTheme } from '@/hooks/useAppTheme';
 export default function TabLayout() {
+  const { theme } = useAppTheme();
+
   const count = useCartCount();
   const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{

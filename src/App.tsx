@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as NativeSplash from 'expo-splash-screen';
@@ -14,11 +13,36 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SplashScreen } from '@/screens/SplashScreen';
 import { motion } from '@/constants/motion';
-import { theme } from '@/theme';
-
+import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
+import { useThemeStore } from '@/store/useThemeStore';
+import { useEffect, useMemo, useState } from 'react';
 void NativeSplash.preventAutoHideAsync().catch(() => undefined);
 
 export default function App() {
+  const { theme, isDark } = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const [themeReady, setThemeReady] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function restoreTheme() {
+      try {
+        await useThemeStore.persist.rehydrate();
+      } catch (error) {
+        console.warn('Không thể đọc lựa chọn giao diện:', error);
+      } finally {
+        if (active) setThemeReady(true);
+      }
+    }
+
+    void restoreTheme();
+
+    return () => {
+      active = false;
+    };
+  }, []);
   const [fontsLoaded, fontError] = useFonts({
     BeVietnamPro_400Regular,
     BeVietnamPro_500Medium,
@@ -27,20 +51,26 @@ export default function App() {
   });
   const [introFinished, setIntroFinished] = useState(false);
   useEffect(() => {
-    if (!fontsLoaded && !fontError) return;
+    // Chờ cả font và lựa chọn theme.
+    if ((!fontsLoaded && !fontError) || !themeReady) return;
+
     void NativeSplash.hideAsync().catch(() => undefined);
+
     const timer = setTimeout(() => setIntroFinished(true), motion.splash);
+
     return () => clearTimeout(timer);
-  }, [fontsLoaded, fontError]);
-  if (!fontsLoaded && !fontError) return null;
+  }, [fontsLoaded, fontError, themeReady]);
+  if ((!fontsLoaded && !fontError) || !themeReady) {
+    return null;
+  }
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={isDark ? 'light' : 'dark'} />
         {fontError ? (
-          <View style={styles.error}>
-            <Text>Không thể tải phông chữ. Vui lòng mở lại MiniShop.</Text>
-          </View>
+          <Text style={{ color: theme.colors.text }}>
+            Không thể tải phông chữ. Vui lòng mở lại MiniShop.
+          </Text>
         ) : !introFinished ? (
           <SplashScreen />
         ) : (
@@ -58,7 +88,17 @@ export default function App() {
     </GestureHandlerRootView>
   );
 }
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  error: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xxl },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    error: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: theme.spacing.xxl,
+      backgroundColor: theme.colors.background,
+    },
+  });

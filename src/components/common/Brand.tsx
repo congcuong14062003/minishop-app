@@ -1,8 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { theme } from '@/theme';
+// 1. Bỏ import theme cố định.
+// Thêm useMemo vào import React đang có, tránh import trùng.
+import { useMemo } from 'react';
+import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 
 export function Brand({ large = false }: { large?: boolean }) {
+  // 2. Thêm bên trong hàm component, trước return.
+  const { theme } = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   return (
     <View style={styles.row} accessibilityLabel="MiniShop">
       <View style={[styles.mark, large && styles.largeMark]}>
@@ -15,18 +21,19 @@ export function Brand({ large = false }: { large?: boolean }) {
     </View>
   );
 }
-const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
-  mark: {
-    width: 34,
-    height: 38,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  largeMark: { width: 56, height: 62, borderRadius: theme.radius.lg },
-  word: { ...theme.typography.title, color: theme.colors.text, letterSpacing: -1.2 },
-  accent: { color: theme.colors.primary },
-  dot: { color: theme.colors.text },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    row: { flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm },
+    mark: {
+      width: 34,
+      height: 38,
+      borderRadius: theme.radius.md,
+      backgroundColor: theme.colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    largeMark: { width: 56, height: 62, borderRadius: theme.radius.lg },
+    word: { ...theme.typography.title, color: theme.colors.text, letterSpacing: -1.2 },
+    accent: { color: theme.colors.primary },
+    dot: { color: theme.colors.text },
+  });

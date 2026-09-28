@@ -17,6 +17,7 @@ export const colors = {
   lavender: '#EFEDF7',
   blue: '#EAF1F7',
   shadow: '#252822',
+  scrim: 'rgba(0, 0, 0, 0.48)',
 } as const;
 
 export type ThemeColors = { [K in keyof typeof colors]: string };

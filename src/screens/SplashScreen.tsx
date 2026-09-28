@@ -1,10 +1,16 @@
 import { StyleSheet, Text } from 'react-native';
 import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 import { Brand } from '@/components/common/Brand';
-import { theme } from '@/theme';
+// 1. Bỏ import theme cố định.
+// Thêm useMemo vào import React đang có, tránh import trùng.
+import { useMemo } from 'react';
+import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 import { motion } from '@/constants/motion';
 
 export function SplashScreen() {
+  const { theme } = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
+
   return (
     <Animated.View style={styles.screen} exiting={FadeOut.duration(motion.normal)}>
       <Animated.View entering={ZoomIn.duration(motion.slow)}>
@@ -20,19 +26,20 @@ export function SplashScreen() {
     </Animated.View>
   );
 }
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.cream,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.lg,
-  },
-  tagline: { ...theme.typography.body, color: theme.colors.textSecondary },
-  footer: {
-    position: 'absolute',
-    bottom: theme.spacing.huge,
-    ...theme.typography.eyebrow,
-    color: theme.colors.muted,
-  },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: theme.colors.cream,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: theme.spacing.lg,
+    },
+    tagline: { ...theme.typography.body, color: theme.colors.textSecondary },
+    footer: {
+      position: 'absolute',
+      bottom: theme.spacing.huge,
+      ...theme.typography.eyebrow,
+      color: theme.colors.muted,
+    },
+  });

@@ -3,7 +3,10 @@ import { Feather } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import type { ComponentProps } from 'react';
 import { Screen } from '@/components/common/Screen';
-import { theme } from '@/theme';
+// 1. Bỏ import theme cố định.
+// Thêm useMemo vào import React đang có, tránh import trùng.
+import { useMemo } from 'react';
+import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 
 interface Props {
   title: string;
@@ -12,6 +15,8 @@ interface Props {
   description: string;
 }
 export function PlaceholderScreen({ title, icon, headline, description }: Props) {
+  const { theme } = useAppTheme();
+  const styles = useMemo(() => createStyles(theme), [theme]);
   return (
     <Screen>
       <Text style={styles.title}>{title}</Text>
@@ -29,47 +34,48 @@ export function PlaceholderScreen({ title, icon, headline, description }: Props)
     </Screen>
   );
 }
-const styles = StyleSheet.create({
-  title: {
-    ...theme.typography.title,
-    color: theme.colors.text,
-    padding: theme.layout.pageGutter,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  body: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.xxxl,
-    gap: theme.spacing.lg,
-  },
-  orbit: {
-    width: 104,
-    height: 104,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  headline: { ...theme.typography.heading, textAlign: 'center', color: theme.colors.text },
-  description: {
-    ...theme.typography.body,
-    textAlign: 'center',
-    color: theme.colors.textSecondary,
-    maxWidth: 300,
-  },
-  link: {
-    ...theme.typography.label,
-    color: theme.colors.primary,
-    padding: theme.spacing.md,
-    marginTop: theme.spacing.sm,
-  },
-  footer: {
-    ...theme.typography.eyebrow,
-    color: theme.colors.muted,
-    textAlign: 'center',
-    padding: theme.spacing.xxl,
-  },
-});
+const createStyles = (theme: AppTheme) =>
+  StyleSheet.create({
+    title: {
+      ...theme.typography.title,
+      color: theme.colors.text,
+      padding: theme.layout.pageGutter,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+    },
+    body: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: theme.spacing.xxxl,
+      gap: theme.spacing.lg,
+    },
+    orbit: {
+      width: 104,
+      height: 104,
+      borderRadius: theme.radius.pill,
+      backgroundColor: theme.colors.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: theme.spacing.sm,
+    },
+    headline: { ...theme.typography.heading, textAlign: 'center', color: theme.colors.text },
+    description: {
+      ...theme.typography.body,
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+      maxWidth: 300,
+    },
+    link: {
+      ...theme.typography.label,
+      color: theme.colors.primary,
+      padding: theme.spacing.md,
+      marginTop: theme.spacing.sm,
+    },
+    footer: {
+      ...theme.typography.eyebrow,
+      color: theme.colors.muted,
+      textAlign: 'center',
+      padding: theme.spacing.xxl,
+    },
+  });

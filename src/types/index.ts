@@ -56,6 +56,7 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   address: Address;
+  paymentMethod?: 'cod' | 'card' | 'wallet';
 }
 export interface ShopNotification {
   id: string;
@@ -76,4 +77,5 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
 }
