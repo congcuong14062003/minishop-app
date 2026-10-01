@@ -39,7 +39,7 @@ export const useShopStore = create<ShopState>((set) => ({
   selectedAddressId: initialAddresses[0]?.id ?? null,
   notifications: [...initialNotifications],
   selectedVoucherId: null,
-  user: { id: 'local-user', name: 'Nguyễn Văn A', email: 'user@example.com' },
+  user: null,
   addToCart: (item) =>
     set((state) => {
       const existing = state.cart.find((entry) => entry.id === item.id);

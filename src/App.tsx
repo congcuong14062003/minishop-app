@@ -15,6 +15,8 @@ import { SplashScreen } from '@/screens/SplashScreen';
 import { motion } from '@/constants/motion';
 import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 import { useThemeStore } from '@/store/useThemeStore';
+import { useShopStore } from '@/store/useShopStore';
+import { restoreSession } from '@/services/auth';
 import { useEffect, useMemo, useState } from 'react';
 void NativeSplash.preventAutoHideAsync().catch(() => undefined);
 
@@ -23,6 +25,7 @@ export default function App() {
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [themeReady, setThemeReady] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -43,6 +46,20 @@ export default function App() {
       active = false;
     };
   }, []);
+  useEffect(() => {
+    let active = true;
+    void restoreSession()
+      .then((user) => {
+        if (active && user) useShopStore.getState().signIn(user);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setAuthReady(true);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [fontsLoaded, fontError] = useFonts({
     BeVietnamPro_400Regular,
     BeVietnamPro_500Medium,
@@ -52,15 +69,15 @@ export default function App() {
   const [introFinished, setIntroFinished] = useState(false);
   useEffect(() => {
     // Chờ cả font và lựa chọn theme.
-    if ((!fontsLoaded && !fontError) || !themeReady) return;
+    if ((!fontsLoaded && !fontError) || !themeReady || !authReady) return;
 
     void NativeSplash.hideAsync().catch(() => undefined);
 
     const timer = setTimeout(() => setIntroFinished(true), motion.splash);
 
     return () => clearTimeout(timer);
-  }, [fontsLoaded, fontError, themeReady]);
-  if ((!fontsLoaded && !fontError) || !themeReady) {
+  }, [fontsLoaded, fontError, themeReady, authReady]);
+  if ((!fontsLoaded && !fontError) || !themeReady || !authReady) {
     return null;
   }
   return (

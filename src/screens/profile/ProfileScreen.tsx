@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/common/PageHeader';
 import { Screen } from '@/components/common/Screen';
 import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 import { useShopStore } from '@/store/useShopStore';
+import { logout } from '@/services/auth';
 
 export default function ProfileScreen() {
   const { theme } = useAppTheme();
@@ -94,7 +95,17 @@ export default function ProfileScreen() {
             onPress={() => router.push('/notifications')}
           />
           <MenuRow icon="settings" label="Cài đặt" onPress={() => router.push('/settings')} />
-          {user && <MenuRow icon="log-out" label="Đăng xuất" danger onPress={signOut} />}
+          {user && (
+            <MenuRow
+              icon="log-out"
+              label="Đăng xuất"
+              danger
+              onPress={() => {
+                signOut();
+                void logout().catch(() => undefined);
+              }}
+            />
+          )}
         </View>
         <Text style={styles.footer}>MINISHOP · MUA SẮM MỖI NGÀY</Text>
       </ScrollView>

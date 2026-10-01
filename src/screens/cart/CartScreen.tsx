@@ -11,7 +11,7 @@ import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
 import { useShopStore } from '@/store/useShopStore';
 import { formatPrice } from '@/utils/format';
 
-export default function CartScreen() {
+export default function CartScreen({ showBack = false }: { showBack?: boolean }) {
   const { theme } = useAppTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
   const cart = useShopStore((state) => state.cart);
@@ -32,7 +32,7 @@ export default function CartScreen() {
 
   return (
     <Screen>
-      <PageHeader title={`Giỏ hàng (${cart.length})`} back={false} />
+      <PageHeader title={`Giỏ hàng (${cart.length})`} back={showBack} />
       {cart.length === 0 ? (
         <View style={styles.empty}>
           <Feather name="shopping-cart" size={64} color={theme.colors.muted} />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Brand } from '@/components/common/Brand';
@@ -7,6 +7,7 @@ import { FormField } from '@/components/common/FormField';
 import { PageHeader } from '@/components/common/PageHeader';
 import { Screen } from '@/components/common/Screen';
 import { useAppTheme, type AppTheme } from '@/hooks/useAppTheme';
+import { login, requestRegistrationCode, verifyRegistration } from '@/services/auth';
 import { useShopStore } from '@/store/useShopStore';
 
 interface Props {
@@ -19,42 +20,65 @@ export default function AuthScreen({ mode }: Props) {
   const signIn = useShopStore((state) => state.signIn);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [code, setCode] = useState('');
+  const [codeStep, setCodeStep] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
   const registering = mode === 'register';
   const nameError = registering && !name.trim() ? 'Vui lòng nhập họ tên.' : undefined;
-  const loginByPhone = !registering && /^\d{10,11}$/.test(email.trim());
-  const emailError =
-    !loginByPhone && !/^\S+@\S+\.\S+$/.test(email.trim())
-      ? registering
-        ? 'Email chưa đúng định dạng.'
-        : 'Nhập email hoặc số điện thoại 10–11 chữ số.'
+  const emailError = !/^\S+@\S+\.\S+$/.test(email.trim())
+    ? 'Email chưa đúng định dạng.'
+    : undefined;
+  const passwordError = !password
+    ? 'Vui lòng nhập mật khẩu.'
+    : registering && password.length < 8
+      ? 'Mật khẩu cần ít nhất 8 ký tự.'
       : undefined;
-  const phoneError =
-    registering && !/^\d{10,11}$/.test(phone.trim())
-      ? 'Số điện thoại cần có 10–11 chữ số.'
-      : undefined;
-  const passwordError = password.length < 6 ? 'Mật khẩu cần ít nhất 6 ký tự.' : undefined;
   const confirmError =
     registering && confirmPassword !== password ? 'Mật khẩu nhập lại chưa khớp.' : undefined;
+  const codeError = !/^\d{6}$/.test(code) ? 'Nhập mã gồm 6 chữ số.' : undefined;
 
-  const submit = () => {
+  const submit = async () => {
+    if (busy) return;
     setSubmitted(true);
-    if (nameError || emailError || phoneError || passwordError || confirmError) return;
-    signIn({
-      id: `demo-${Date.now()}`,
-      name: registering
-        ? name.trim()
-        : loginByPhone
-          ? 'Khách hàng MiniShop'
-          : (email.trim().split('@')[0] ?? email.trim()),
-      email: loginByPhone ? '' : email.trim(),
-      phone: registering ? phone.trim() : loginByPhone ? email.trim() : undefined,
-    });
-    router.replace('/(tabs)/profile');
+    setError('');
+    if (codeStep ? codeError : nameError || emailError || passwordError || confirmError) return;
+    setBusy(true);
+    try {
+      if (registering && !codeStep) {
+        await requestRegistrationCode(email.trim(), name.trim(), password);
+        setCodeStep(true);
+        setSubmitted(false);
+      } else {
+        const user = registering
+          ? await verifyRegistration(email.trim(), code)
+          : await login(email.trim(), password);
+        signIn(user);
+        router.replace('/(tabs)/profile');
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Có lỗi xảy ra. Vui lòng thử lại.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resendCode = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      await requestRegistrationCode(email.trim(), name.trim(), password);
+      setError('Yêu cầu đã được xử lý. Nếu vừa xin mã, hãy đợi 60 giây trước khi gửi lại.');
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Không gửi lại được mã.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -63,101 +87,125 @@ export default function AuthScreen({ mode }: Props) {
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Brand />
         <Text style={styles.title}>
-          {registering ? 'Hãy tạo tài khoản' : 'Chào mừng trở lại 👋'}
+          {codeStep ? 'Xác minh email' : registering ? 'Hãy tạo tài khoản' : 'Chào mừng trở lại 👋'}
         </Text>
         <Text style={styles.subtitle}>
-          {registering
-            ? 'Bắt đầu hành trình mua sắm cùng MiniShop.'
-            : 'Rất vui được gặp lại bạn tại MiniShop.'}
+          {codeStep
+            ? `Nhập mã 6 số đã gửi tới ${email.trim()}. Mã có hiệu lực 10 phút; gửi lại sau 60 giây.`
+            : registering
+              ? 'Đăng ký bằng email và xác minh mã để tạo tài khoản.'
+              : 'Đăng nhập bằng email và mật khẩu MiniShop.'}
         </Text>
-        {registering && (
+        {codeStep ? (
           <FormField
-            label="Họ và tên"
-            value={name}
-            onChangeText={setName}
-            placeholder="Nguyễn Văn A"
-            autoCapitalize="words"
-            error={submitted ? nameError : undefined}
+            label="Mã xác minh"
+            value={code}
+            onChangeText={setCode}
+            placeholder="000000"
+            keyboardType="number-pad"
+            maxLength={6}
+            error={submitted ? codeError : undefined}
           />
-        )}
-        <FormField
-          label={registering ? 'Email' : 'Email / Số điện thoại'}
-          value={email}
-          onChangeText={setEmail}
-          placeholder={registering ? 'ban@example.com' : 'Email hoặc số điện thoại'}
-          keyboardType={registering ? 'email-address' : 'default'}
-          autoCapitalize="none"
-          autoComplete="email"
-          error={submitted ? emailError : undefined}
-        />
-        {registering && (
-          <FormField
-            label="Số điện thoại"
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="0123456789"
-            keyboardType="phone-pad"
-            error={submitted ? phoneError : undefined}
-          />
-        )}
-        <FormField
-          label="Mật khẩu"
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Ít nhất 6 ký tự"
-          secureTextEntry={!showPassword}
-          autoComplete={registering ? 'new-password' : 'current-password'}
-          error={submitted ? passwordError : undefined}
-        />
-        <Pressable style={styles.showPassword} onPress={() => setShowPassword((value) => !value)}>
-          <Feather
-            name={showPassword ? 'eye-off' : 'eye'}
-            size={16}
-            color={theme.colors.textSecondary}
-          />
-          <Text style={styles.muted}>{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</Text>
-        </Pressable>
-        {registering && (
-          <FormField
-            label="Nhập lại mật khẩu"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Nhập lại mật khẩu"
-            secureTextEntry={!showPassword}
-            error={submitted ? confirmError : undefined}
-          />
+        ) : (
+          <>
+            {registering && (
+              <FormField
+                label="Họ và tên"
+                value={name}
+                onChangeText={setName}
+                placeholder="Nguyễn Văn A"
+                autoCapitalize="words"
+                error={submitted ? nameError : undefined}
+              />
+            )}
+            <FormField
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="ban@example.com"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              error={submitted ? emailError : undefined}
+            />
+            <FormField
+              label="Mật khẩu"
+              value={password}
+              onChangeText={setPassword}
+              placeholder={registering ? 'Ít nhất 8 ký tự' : 'Nhập mật khẩu'}
+              secureTextEntry={!showPassword}
+              autoComplete={registering ? 'new-password' : 'current-password'}
+              error={submitted ? passwordError : undefined}
+            />
+            <Pressable
+              style={styles.showPassword}
+              onPress={() => setShowPassword((value) => !value)}
+            >
+              <Feather
+                name={showPassword ? 'eye-off' : 'eye'}
+                size={16}
+                color={theme.colors.textSecondary}
+              />
+              <Text style={styles.muted}>{showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}</Text>
+            </Pressable>
+            {registering && (
+              <FormField
+                label="Nhập lại mật khẩu"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                placeholder="Nhập lại mật khẩu"
+                secureTextEntry={!showPassword}
+                error={submitted ? confirmError : undefined}
+              />
+            )}
+          </>
         )}
         {!registering && (
           <Pressable onPress={() => router.push('/forgot-password')}>
             <Text style={styles.forgot}>Quên mật khẩu?</Text>
           </Pressable>
         )}
-        <Pressable style={styles.primaryButton} onPress={submit} accessibilityRole="button">
-          <Text style={styles.primaryText}>{registering ? 'Đăng ký' : 'Đăng nhập'}</Text>
+        {!!error && <Text style={styles.notice}>{error}</Text>}
+        <Pressable
+          style={[styles.primaryButton, busy && styles.disabled]}
+          onPress={() => void submit()}
+          disabled={busy}
+          accessibilityRole="button"
+        >
+          {busy ? (
+            <ActivityIndicator color={theme.colors.onPrimary} />
+          ) : (
+            <Text style={styles.primaryText}>
+              {codeStep
+                ? 'Xác minh và tạo tài khoản'
+                : registering
+                  ? 'Gửi mã đăng ký'
+                  : 'Đăng nhập'}
+            </Text>
+          )}
         </Pressable>
-        {!registering && (
+        {codeStep ? (
           <>
-            <Text style={styles.or}>hoặc</Text>
+            <Pressable onPress={() => void resendCode()} disabled={busy}>
+              <Text style={styles.switchText}>Gửi lại mã</Text>
+            </Pressable>
             <Pressable
-              style={styles.googleButton}
               onPress={() => {
-                signIn({ id: 'demo-google', name: 'Nguyễn Văn A', email: 'user@example.com' });
-                router.replace('/(tabs)/profile');
+                setCodeStep(false);
+                setSubmitted(false);
+                setCode('');
               }}
             >
-              <Text style={styles.googleText}>Tiếp tục với Google (demo)</Text>
+              <Text style={styles.switchText}>Đổi thông tin đăng ký</Text>
             </Pressable>
           </>
+        ) : (
+          <Pressable onPress={() => router.replace(registering ? '/login' : '/register')}>
+            <Text style={styles.switchText}>
+              {registering ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}
+            </Text>
+          </Pressable>
         )}
-        <Pressable onPress={() => router.replace(registering ? '/login' : '/register')}>
-          <Text style={styles.switchText}>
-            {registering ? 'Đã có tài khoản? Đăng nhập' : 'Chưa có tài khoản? Đăng ký'}
-          </Text>
-        </Pressable>
-        <Text style={styles.demoNote}>
-          Bản UI mô phỏng: thông tin nhập chỉ dùng để trải nghiệm màn hình, không xác thực qua máy
-          chủ.
-        </Text>
       </ScrollView>
     </Screen>
   );
@@ -194,26 +242,12 @@ const createStyles = (theme: AppTheme) =>
       marginTop: theme.spacing.md,
     },
     primaryText: { ...theme.typography.label, color: theme.colors.onPrimary },
-    or: { ...theme.typography.caption, color: theme.colors.muted, textAlign: 'center' },
-    googleButton: {
-      minHeight: theme.layout.touchTarget,
-      borderRadius: theme.radius.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    googleText: { ...theme.typography.label, color: theme.colors.text },
+    notice: { ...theme.typography.body, color: theme.colors.error },
+    disabled: { opacity: 0.6 },
     switchText: {
       ...theme.typography.label,
       color: theme.colors.primary,
       textAlign: 'center',
       paddingVertical: theme.spacing.sm,
-    },
-    demoNote: {
-      ...theme.typography.caption,
-      color: theme.colors.muted,
-      textAlign: 'center',
-      marginTop: theme.spacing.lg,
     },
   });

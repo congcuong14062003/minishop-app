@@ -16,7 +16,7 @@ export function CartIconButton({ placement = 'header' }: Props) {
 
   return (
     <Pressable
-      onPress={() => router.push('/(tabs)/cart')}
+      onPress={() => router.push('/cart-view')}
       style={({ pressed }) => [
         styles.button,
         placement === 'bottom' && styles.bottomButton,

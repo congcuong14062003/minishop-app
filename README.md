@@ -1,8 +1,20 @@
-# MiniShop · Phase 1
+# MiniShop
 
-Nền tảng UI mobile thương mại điện tử với Expo SDK 57, React Native và TypeScript strict. Dữ liệu hoàn toàn local, không gọi API nghiệp vụ, không backend và không thanh toán thật.
+Ứng dụng MiniShop dùng Expo SDK 57, React Native và TypeScript strict. Đăng nhập, đăng ký bằng mã email và quên mật khẩu gọi backend Spring Boot; dữ liệu sản phẩm và mua sắm vẫn là dữ liệu mẫu local.
 
-## Phạm vi hoàn thành
+## Kết nối auth API
+
+Chạy `minishop-server` trên cổng 8080 trước. Expo Go trên máy thật tự lấy IP của máy chạy Metro khi dùng kết nối LAN; máy ảo Android dùng `10.0.2.2`, web dùng `localhost`. Nếu dùng Expo tunnel, bản build riêng hoặc backend ở địa chỉ khác, tạo `.env.local` trong `minishop-app`:
+
+```env
+EXPO_PUBLIC_API_URL=http://192.168.1.10:8080
+```
+
+Thay IP ví dụ bằng IPv4 LAN của máy chạy backend, rồi khởi động lại Metro. Máy thật và máy tính phải cùng mạng, firewall phải cho phép kết nối cổng 8080. Bản triển khai public cần URL HTTPS. Mật khẩu SMTP và khóa backend chỉ đặt trong `minishop-server/config/`, không đưa vào biến `EXPO_PUBLIC_*` vì chúng được nhúng vào app.
+
+Từ tab Tài khoản, chọn Đăng ký để nhận mã email và xác minh, hoặc Đăng nhập bằng email/mật khẩu. Quên mật khẩu gửi mã email và cho đặt mật khẩu mới. Refresh token được lưu bằng Expo SecureStore trên Android/iOS; bản web chỉ giữ phiên trong bộ nhớ nên tải lại trang sẽ cần đăng nhập lại. Đăng xuất thu hồi refresh token. Các dữ liệu giỏ hàng, đơn hàng và địa chỉ hiện vẫn là mock local, chưa gắn với tài khoản backend.
+
+## Ghi chú thiết kế giao diện ban đầu
 
 - Expo Router với 5 tab: Trang chủ, Danh mục, Giỏ hàng, Yêu thích, Tài khoản.
 - Splash thương hiệu khoảng 1,5 giây sau khi font local sẵn sàng.
@@ -15,7 +27,7 @@ Nền tảng UI mobile thương mại điện tử với Expo SDK 57, React Nati
 - 8 danh mục, 4 banner, 2 sản phẩm mẫu để xác lập cấu trúc. Danh mục 30–50 sản phẩm và ảnh được làm ở phase sản phẩm.
 - Zustand lưu cart/wishlist/user trong bộ nhớ; khởi động lại sẽ reset. Chưa lưu AsyncStorage.
 
-**Dừng tại Phase 1 theo yêu cầu.** Skeleton Home hiển thị có chủ đích để duyệt bố cục; không đại diện cho việc chờ API. Search, carousel và danh sách sản phẩm sẽ được nối chức năng trong các phase sau.
+Phần dưới ghi lại phạm vi giao diện ở giai đoạn đầu; các màn auth hiện đã gọi API thật. Catalog và nhiều luồng mua sắm vẫn dùng dữ liệu mẫu.
 
 ## Chạy project
 
